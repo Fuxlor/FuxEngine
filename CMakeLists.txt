@@ -18,7 +18,7 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Ajoutez une source à l'exécutable de ce projet.
-add_executable (FuxEngine "src/FuxEngine.cpp" "src/FuxEngine.h" "third_party/glad/src/glad.c" "include/Core/Window.h" "src/Core/Window.cpp" "include/Graphics/Shader.h" "src/Graphics/Shader.cpp" "include/Graphics/VertexBuffer.h" "src/Graphics/VertexBuffer.cpp" "include/Graphics/VertexArray.h" "src/Graphics/VertexArray.cpp" "include/Graphics/Renderer.h" "src/Graphics/Renderer.cpp" "include/Graphics/IndexBuffer.h" "src/Graphics/IndexBuffer.cpp" "include/Graphics/Mesh.h" "src/Graphics/Mesh.cpp" "include/Graphics/BufferLayout.h")
+add_executable (FuxEngine "src/FuxEngine.cpp" "src/FuxEngine.h" "third_party/glad/src/glad.c" "include/Core/Window.h" "src/Core/Window.cpp" "include/Graphics/Shader.h" "src/Graphics/Shader.cpp" "include/Graphics/VertexBuffer.h" "src/Graphics/VertexBuffer.cpp" "include/Graphics/VertexArray.h" "src/Graphics/VertexArray.cpp" "include/Graphics/Renderer.h" "src/Graphics/Renderer.cpp" "include/Graphics/IndexBuffer.h" "src/Graphics/IndexBuffer.cpp" "include/Graphics/Mesh.h" "src/Graphics/Mesh.cpp" "include/Graphics/BufferLayout.h" "src/Vendor/stb_image_impl.cpp" "include/Graphics/Texture.h" "src/Graphics/Texture.cpp")
 
 if (CMAKE_VERSION VERSION_GREATER 3.12)
   set_property(TARGET FuxEngine PROPERTY CXX_STANDARD 20)
@@ -44,3 +44,11 @@ target_link_libraries(FuxEngine PRIVATE glfw)
 target_include_directories(FuxEngine PRIVATE
     third_party/glad/include
 )
+
+add_library(stb_image INTERFACE)
+
+target_include_directories(stb_image INTERFACE
+    ${CMAKE_SOURCE_DIR}/third_party/stb
+)
+
+target_link_libraries(FuxEngine PRIVATE stb_image)

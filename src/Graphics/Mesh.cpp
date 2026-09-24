@@ -27,7 +27,8 @@ namespace FuxEngine
     {
         BufferLayout layout = {
             { ShaderDataType::Float2, "aPos" },
-            { ShaderDataType::Float3, "aColor" }
+            { ShaderDataType::Float3, "aColor" },
+            { ShaderDataType::Float2, "aTexCoord" }
         };
 
         m_VertexArray.SetLayout(layout);
