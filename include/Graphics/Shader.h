@@ -1,6 +1,7 @@
 #pragma once
 
 #include <glad/glad.h>
+#include <glm/glm.hpp>
 #include <string>
 
 namespace FuxEngine
@@ -19,10 +20,11 @@ namespace FuxEngine
         void Unbind() const;
 
         void SetUniform1i(const std::string& name, int value) const;
+        void SetUniformMat4(const std::string& name, const glm::mat4& matrix) const;
 
         unsigned int GetID() const;
 
     private:
-        unsigned int m_ID = 0;
+        unsigned int m_RendererID = 0;
     };
 }

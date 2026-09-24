@@ -53,6 +53,16 @@ target_include_directories(stb_image INTERFACE
 
 target_link_libraries(FuxEngine PRIVATE stb_image)
 
+FetchContent_Declare(
+    glm
+    GIT_REPOSITORY https://github.com/g-truc/glm.git
+    GIT_TAG 1.0.1
+)
+
+FetchContent_MakeAvailable(glm)
+
+target_link_libraries(FuxEngine PRIVATE glm::glm)
+
 # Assets
 add_custom_command(TARGET FuxEngine POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory

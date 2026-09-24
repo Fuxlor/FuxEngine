@@ -7,10 +7,10 @@ namespace FuxEngine
         unsigned int size
     )
     {
-        glGenBuffers(1, &m_ID);
+        glGenBuffers(1, &m_RendererID);
         glBindBuffer(
             GL_ARRAY_BUFFER, 
-            m_ID
+            m_RendererID
         );
         glBufferData(
             GL_ARRAY_BUFFER, 
@@ -22,12 +22,12 @@ namespace FuxEngine
 
     VertexBuffer::~VertexBuffer()
     {
-        glDeleteBuffers(1, &m_ID);
+        glDeleteBuffers(1, &m_RendererID);
     }
 
     void VertexBuffer::Bind() const
     {
-        glBindBuffer(GL_ARRAY_BUFFER, m_ID);
+        glBindBuffer(GL_ARRAY_BUFFER, m_RendererID);
     }
 
     void VertexBuffer::Unbind() const
@@ -37,6 +37,6 @@ namespace FuxEngine
 
     unsigned int VertexBuffer::GetID() const
     {
-        return m_ID;
+        return m_RendererID;
     }
 }

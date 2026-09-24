@@ -1,5 +1,6 @@
 #include "Graphics/Shader.h"
 
+#include <glm/gtc/type_ptr.hpp>
 #include <iostream>
 #include <stdexcept>
 
@@ -89,27 +90,27 @@ namespace FuxEngine
         // Shader Program
         // =========================
 
-        m_ID = glCreateProgram();
+        m_RendererID = glCreateProgram();
 
         glAttachShader(
-            m_ID, 
+            m_RendererID, 
             vertexShader
         );
         glAttachShader(
-            m_ID, 
+            m_RendererID, 
             fragmentShader
         );
-        glLinkProgram(m_ID);
+        glLinkProgram(m_RendererID);
 
         glGetProgramiv(
-            m_ID, 
+            m_RendererID, 
             GL_LINK_STATUS, 
             &success
         );
         if (!success)
         {
             glGetProgramInfoLog(
-                m_ID, 
+                m_RendererID, 
                 512, 
                 nullptr, 
                 infoLog
@@ -119,9 +120,9 @@ namespace FuxEngine
 
             glDeleteShader(vertexShader);
             glDeleteShader(fragmentShader);
-            glDeleteProgram(m_ID);
+            glDeleteProgram(m_RendererID);
 
-            m_ID = 0;
+            m_RendererID = 0;
 
             throw std::runtime_error(
                 "Shader program linking failed"
@@ -135,7 +136,7 @@ namespace FuxEngine
 
     void Shader::Bind() const
     {
-        glUseProgram(m_ID);
+        glUseProgram(m_RendererID);
     }
 
     void Shader::Unbind() const
@@ -146,21 +147,31 @@ namespace FuxEngine
     void Shader::SetUniform1i(const std::string& name, int value) const
     {
         glUniform1i(
-            glGetUniformLocation(m_ID, name.c_str()),
+            glGetUniformLocation(m_RendererID, name.c_str()),
             value
+        );
+    }
+
+    void Shader::SetUniformMat4(const std::string& name, const glm::mat4& matrix) const
+    {
+        glUniformMatrix4fv(
+            glGetUniformLocation(m_RendererID, name.c_str()),
+            1,
+            GL_FALSE,
+            glm::value_ptr(matrix)
         );
     }
 
     unsigned int Shader::GetID() const
     {
-        return m_ID;
+        return m_RendererID;
     }
 
     Shader::~Shader()
     {
-        if (m_ID != 0)
+        if (m_RendererID != 0)
         {
-            glDeleteProgram(m_ID);
+            glDeleteProgram(m_RendererID);
         }
     }
 }

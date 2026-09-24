@@ -8,11 +8,11 @@ namespace FuxEngine
     )
         : m_Count(count)
     {
-        glGenBuffers(1, &m_ID);
+        glGenBuffers(1, &m_RendererID);
 
         glBindBuffer(
             GL_ELEMENT_ARRAY_BUFFER,
-            m_ID
+            m_RendererID
         );
 
         glBufferData(
@@ -25,14 +25,14 @@ namespace FuxEngine
 
     IndexBuffer::~IndexBuffer()
     {
-        glDeleteBuffers(1, &m_ID);
+        glDeleteBuffers(1, &m_RendererID);
     }
 
     void IndexBuffer::Bind() const
     {
         glBindBuffer(
             GL_ELEMENT_ARRAY_BUFFER,
-            m_ID
+            m_RendererID
         );
     }
 
@@ -46,7 +46,7 @@ namespace FuxEngine
 
     unsigned int IndexBuffer::GetID() const
     {
-        return m_ID;
+        return m_RendererID;
     }
 
     unsigned int IndexBuffer::GetCount() const

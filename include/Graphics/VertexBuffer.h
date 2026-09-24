@@ -16,6 +16,6 @@ namespace FuxEngine
         unsigned int GetID() const;
 
     private:
-        unsigned int m_ID = 0;
+        unsigned int m_RendererID = 0;
     };
 }

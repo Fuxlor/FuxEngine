@@ -17,7 +17,7 @@ namespace FuxEngine
         unsigned int GetCount() const;
 
     private:
-        unsigned int m_ID = 0;
+        unsigned int m_RendererID = 0;
         unsigned int m_Count = 0;
     };
 }
