@@ -52,3 +52,10 @@ target_include_directories(stb_image INTERFACE
 )
 
 target_link_libraries(FuxEngine PRIVATE stb_image)
+
+# Assets
+add_custom_command(TARGET FuxEngine POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${CMAKE_SOURCE_DIR}/assets
+        $<TARGET_FILE_DIR:FuxEngine>/assets
+)

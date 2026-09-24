@@ -1,6 +1,7 @@
 #pragma once
 
 #include <glad/glad.h>
+#include <string>
 
 namespace FuxEngine
 {
@@ -16,6 +17,8 @@ namespace FuxEngine
 
         void Bind() const;
         void Unbind() const;
+
+        void SetUniform1i(const std::string& name, int value) const;
 
         unsigned int GetID() const;
 

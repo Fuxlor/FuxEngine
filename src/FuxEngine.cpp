@@ -5,6 +5,7 @@
 #include "Graphics/IndexBuffer.h"
 #include "Graphics/Renderer.h"
 #include "Graphics/Mesh.h"
+#include "Graphics/Texture.h"
 
 #include <iostream>
 
@@ -44,11 +45,11 @@ int main()
     )";
 
     float vertices[] = {
-        // position       // couleur
-        -0.5f,  0.5f,     1.0f, 0.0f, 0.0f, // 0
-         0.5f,  0.5f,     0.0f, 1.0f, 0.0f, // 1
-         0.5f, -0.5f,     0.0f, 0.0f, 1.0f, // 2
-        -0.5f, -0.5f,     1.0f, 1.0f, 0.0f  // 3
+        // position       // couleur          // UV
+        -0.5f,  0.5f,     1.0f, 0.0f, 0.0f,   0.0f, 1.0f, // 0
+         0.5f,  0.5f,     0.0f, 1.0f, 0.0f,   1.0f, 1.0f, // 1
+         0.5f, -0.5f,     0.0f, 0.0f, 1.0f,   1.0f, 0.0f, // 2
+        -0.5f, -0.5f,     1.0f, 1.0f, 0.0f,   0.0f, 0.0f  // 3
     };
     unsigned int indices[] = {
     0, 1, 2,
@@ -83,6 +84,11 @@ int main()
 
         shader.Bind();
 
+		// TEXTURE
+        FuxEngine::Texture texture("assets/textures/test.jpg");
+
+        shader.SetUniform1i("ourTexture", 0);
+
         // VAO VBO EBO in mesh
         FuxEngine::Mesh mesh(
             vertices,
@@ -97,6 +103,7 @@ int main()
             FuxEngine::Renderer::Clear();
 
             shader.Bind();
+            texture.Bind(0);
 
             FuxEngine::Renderer::Draw(mesh);
 

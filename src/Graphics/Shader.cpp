@@ -143,6 +143,14 @@ namespace FuxEngine
         glUseProgram(0);
     }
 
+    void Shader::SetUniform1i(const std::string& name, int value) const
+    {
+        glUniform1i(
+            glGetUniformLocation(m_ID, name.c_str()),
+            value
+        );
+    }
+
     unsigned int Shader::GetID() const
     {
         return m_ID;
