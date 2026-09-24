@@ -7,7 +7,7 @@ namespace FuxEngine
 {
     void Renderer::Clear()
     {
-        glClear(GL_COLOR_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     }
 
     void Renderer::SetClearColor(
@@ -30,5 +30,19 @@ namespace FuxEngine
             GL_UNSIGNED_INT,
             nullptr
         );
+    }
+
+    void Renderer::Draw(Entity& entity)
+    {
+        Material& material = entity.GetMaterial();
+
+        material.Bind();
+
+        material.GetShader().SetUniformMat4(
+            "model",
+            entity.GetTransform().GetMatrix()
+        );
+
+        Draw(entity.GetMesh());
     }
 }

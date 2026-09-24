@@ -1,4 +1,7 @@
 ﻿#include "Core/Window.h"
+#include "Core/Camera.h"
+#include "Core/Entity.h"
+#include "Core/Scene.h"
 #include "Graphics/Shader.h"
 #include "Graphics/VertexArray.h"
 #include "Graphics/VertexBuffer.h"
@@ -6,61 +9,41 @@
 #include "Graphics/Renderer.h"
 #include "Graphics/Mesh.h"
 #include "Graphics/Texture.h"
+#include "Graphics/Transform.h"
+#include "Graphics/Material.h"
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
 #include <iostream>
 
-struct CameraState
-{
-    glm::vec3 position = glm::vec3(0.0f, 0.0f, 3.0f);
-    glm::vec3 front = glm::vec3(0.0f, 0.0f, -1.0f);
-    glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
-
-    float yaw = -90.0f;
-    float pitch = 0.0f;
-
-    float lastX = 640.0f;
-    float lastY = 360.0f;
-    bool firstMouse = true;
-};
-
 void MouseCallback(GLFWwindow* window, double xpos, double ypos)
 {
-    CameraState* camera = static_cast<CameraState*>(
-            glfwGetWindowUserPointer(window)
-        );
+    FuxEngine::Camera* camera =static_cast<FuxEngine::Camera*>(glfwGetWindowUserPointer(window));
 
-    if (camera->firstMouse)
+    static float lastX = 640.0f;
+    static float lastY = 360.0f;
+    static bool firstMouse = true;
+
+    if (firstMouse)
     {
-        camera->lastX = static_cast<float>(xpos);
-        camera->lastY = static_cast<float>(ypos);
-        camera->firstMouse = false;
+        lastX = static_cast<float>(xpos);
+        lastY = static_cast<float>(ypos);
+
+        firstMouse = false;
     }
 
-    float xoffset = static_cast<float>(xpos) - camera->lastX;
-    float yoffset = camera->lastY - static_cast<float>(ypos);
+    float xOffset = static_cast<float>(xpos) - lastX;
 
-    camera->lastX = static_cast<float>(xpos);
-    camera->lastY = static_cast<float>(ypos);
+    float yOffset = lastY - static_cast<float>(ypos);
 
-    float sensitivity = 0.1f;
-    xoffset *= sensitivity;
-    yoffset *= sensitivity;
+    lastX = static_cast<float>(xpos);
+    lastY = static_cast<float>(ypos);
 
-    camera->yaw += xoffset;
-    camera->pitch += yoffset;
-
-    if (camera->pitch > 89.0f)  camera->pitch = 89.0f;
-    if (camera->pitch < -89.0f) camera->pitch = -89.0f;
-
-    glm::vec3 direction;
-    direction.x = cos(glm::radians(camera->yaw)) * cos(glm::radians(camera->pitch));
-    direction.y = sin(glm::radians(camera->pitch));
-    direction.z = sin(glm::radians(camera->yaw)) * cos(glm::radians(camera->pitch));
-
-    camera->front = glm::normalize(direction);
+    camera->ProcessMouseMovement(
+        xOffset,
+        yOffset
+    );
 }
 
 int main()
@@ -68,7 +51,7 @@ int main()
     const char* vertexShaderSource = R"(
         #version 330 core
 
-        layout (location = 0) in vec2 aPos;
+        layout (location = 0) in vec3 aPos;
         layout (location = 1) in vec3 aColor;
         layout (location = 2) in vec2 aTexCoord;
 
@@ -81,7 +64,7 @@ int main()
 
         void main()
         {
-            gl_Position = projection * view * model * vec4(aPos, 0.0, 1.0);
+            gl_Position = projection * view * model * vec4(aPos, 1.0);
             ourColor = aColor;
             TexCoord = aTexCoord;
         }
@@ -103,15 +86,51 @@ int main()
     )";
 
     float vertices[] = {
-        // position       // couleur          // UV
-        -0.5f,  0.5f,     1.0f, 0.0f, 0.0f,   0.0f, 1.0f, // 0
-         0.5f,  0.5f,     0.0f, 1.0f, 0.0f,   1.0f, 1.0f, // 1
-         0.5f, -0.5f,     0.0f, 0.0f, 1.0f,   1.0f, 0.0f, // 2
-        -0.5f, -0.5f,     1.0f, 1.0f, 0.0f,   0.0f, 0.0f  // 3
+        // position              // color             // UV
+
+        // Front
+        -0.5f, -0.5f,  0.5f,     1.0f, 0.0f, 0.0f,   0.0f, 0.0f,
+         0.5f, -0.5f,  0.5f,     0.0f, 1.0f, 0.0f,   1.0f, 0.0f,
+         0.5f,  0.5f,  0.5f,     0.0f, 0.0f, 1.0f,   1.0f, 1.0f,
+        -0.5f,  0.5f,  0.5f,     1.0f, 1.0f, 0.0f,   0.0f, 1.0f,
+
+        // Back
+        -0.5f, -0.5f, -0.5f,     1.0f, 0.0f, 0.0f,   1.0f, 0.0f,
+        -0.5f,  0.5f, -0.5f,     0.0f, 1.0f, 0.0f,   1.0f, 1.0f,
+         0.5f,  0.5f, -0.5f,     0.0f, 0.0f, 1.0f,   0.0f, 1.0f,
+         0.5f, -0.5f, -0.5f,     1.0f, 1.0f, 0.0f,   0.0f, 0.0f,
+
+         // Left
+         -0.5f, -0.5f, -0.5f,     1.0f, 0.0f, 0.0f,   0.0f, 0.0f,
+         -0.5f, -0.5f,  0.5f,     0.0f, 1.0f, 0.0f,   1.0f, 0.0f,
+         -0.5f,  0.5f,  0.5f,     0.0f, 0.0f, 1.0f,   1.0f, 1.0f,
+         -0.5f,  0.5f, -0.5f,     1.0f, 1.0f, 0.0f,   0.0f, 1.0f,
+
+         // Right
+          0.5f, -0.5f,  0.5f,     1.0f, 0.0f, 0.0f,   0.0f, 0.0f,
+          0.5f, -0.5f, -0.5f,     0.0f, 1.0f, 0.0f,   1.0f, 0.0f,
+          0.5f,  0.5f, -0.5f,     0.0f, 0.0f, 1.0f,   1.0f, 1.0f,
+          0.5f,  0.5f,  0.5f,     1.0f, 1.0f, 0.0f,   0.0f, 1.0f,
+
+          // Top
+          -0.5f,  0.5f,  0.5f,     1.0f, 0.0f, 0.0f,   0.0f, 0.0f,
+           0.5f,  0.5f,  0.5f,     0.0f, 1.0f, 0.0f,   1.0f, 0.0f,
+           0.5f,  0.5f, -0.5f,     0.0f, 0.0f, 1.0f,   1.0f, 1.0f,
+          -0.5f,  0.5f, -0.5f,     1.0f, 1.0f, 0.0f,   0.0f, 1.0f,
+
+          // Bottom
+          -0.5f, -0.5f, -0.5f,     1.0f, 0.0f, 0.0f,   0.0f, 0.0f,
+           0.5f, -0.5f, -0.5f,     0.0f, 1.0f, 0.0f,   1.0f, 0.0f,
+           0.5f, -0.5f,  0.5f,     0.0f, 0.0f, 1.0f,   1.0f, 1.0f,
+          -0.5f, -0.5f,  0.5f,     1.0f, 1.0f, 0.0f,   0.0f, 1.0f
     };
     unsigned int indices[] = {
-    0, 1, 2,
-    0, 2, 3
+         0,  1,  2,   2,  3,  0, // Front
+         4,  5,  6,   6,  7,  4, // Back
+         8,  9, 10,  10, 11,  8, // Left
+        12, 13, 14,  14, 15, 12, // Right
+        16, 17, 18,  18, 19, 16, // Top
+        20, 21, 22,  22, 23, 20  // Bottom
     };
 
     try
@@ -145,14 +164,18 @@ int main()
 		// TEXTURE
         FuxEngine::Texture texture("assets/textures/test.jpg");
 
-        shader.SetUniform1i("ourTexture", 0);
+		// MATERIAL
+        FuxEngine::Material material(
+            shader,
+            texture
+        );
 
         // VAO VBO EBO in mesh
         FuxEngine::Mesh mesh(
             vertices,
             sizeof(vertices),
             indices,
-            6
+            36
         );
 
 		// PROJECTION MATRIX
@@ -165,66 +188,88 @@ int main()
         shader.SetUniformMat4("projection", projection);
 
 		// CAMERA
-        CameraState camera;
+        FuxEngine::Camera camera;
 
         glfwSetWindowUserPointer(window.GetNativeWindow(), &camera);
         glfwSetInputMode(window.GetNativeWindow(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
         glfwSetCursorPosCallback(window.GetNativeWindow(), MouseCallback);
 
-        float lastFrameTime = 0.0f;
+        glEnable(GL_DEPTH_TEST);
 
+        // TRANSFORM
+        FuxEngine::Scene scene;
+
+        FuxEngine::Entity& cube = scene.CreateEntity(mesh, material);
+
+        FuxEngine::Entity& cube2 = scene.CreateEntity(mesh, material);
 
         // MAIN LOOP
+        float lastFrameTime = 0.0f;
         while (!window.ShouldClose())
         {
+			// TIME
             float currentFrameTime = static_cast<float>(glfwGetTime());
             float deltaTime = currentFrameTime - lastFrameTime;
             lastFrameTime = currentFrameTime;
-
-            float cameraSpeed = 2.5f * deltaTime;
 
             GLFWwindow* nativeWindow = window.GetNativeWindow();
 
             // CONTROLS
             if (glfwGetKey(nativeWindow, GLFW_KEY_W) == GLFW_PRESS)
-                camera.position += cameraSpeed * camera.front;
+            {
+                camera.ProcessKeyboard(
+                    FuxEngine::CameraMovement::Forward,
+                    deltaTime
+                );
+            }
 
             if (glfwGetKey(nativeWindow, GLFW_KEY_S) == GLFW_PRESS)
-                camera.position -= cameraSpeed * camera.front;
+            {
+                camera.ProcessKeyboard(
+                    FuxEngine::CameraMovement::Backward,
+                    deltaTime
+                );
+            }
 
             if (glfwGetKey(nativeWindow, GLFW_KEY_A) == GLFW_PRESS)
-                camera.position -= glm::normalize(glm::cross(camera.front, camera.up)) * cameraSpeed;
+            {
+                camera.ProcessKeyboard(
+                    FuxEngine::CameraMovement::Left,
+                    deltaTime
+                );
+            }
 
             if (glfwGetKey(nativeWindow, GLFW_KEY_D) == GLFW_PRESS)
-                camera.position += glm::normalize(glm::cross(camera.front, camera.up)) * cameraSpeed;
+            {
+                camera.ProcessKeyboard(
+                    FuxEngine::CameraMovement::Right,
+                    deltaTime
+                );
+            }
 
             // EXIT
             if (glfwGetKey(nativeWindow, GLFW_KEY_ESCAPE) == GLFW_PRESS)
                 glfwSetWindowShouldClose(nativeWindow, true);
 
 			// VIEW MATRIX
-            glm::mat4 view = glm::lookAt(
-                camera.position,
-                camera.position + camera.front,
-                camera.up
+            shader.SetUniformMat4(
+                "view",
+                camera.GetViewMatrix()
             );
-
-            shader.SetUniformMat4("view", view);
 
 			// RENDER
             FuxEngine::Renderer::Clear();
 
-            shader.Bind();
-            texture.Bind(0);
+            cube.GetTransform().position.x = -1.5f;
+            cube2.GetTransform().position.x = 1.5f;
 
-            float time = static_cast<float>(glfwGetTime());
+            cube.GetTransform().rotation.y = glm::degrees(currentFrameTime);
+            cube2.GetTransform().rotation.x = glm::degrees(currentFrameTime);
 
-            glm::mat4 model = glm::mat4(1.0f);
-            model = glm::rotate(model, time, glm::vec3(0.0f, 0.0f, 1.0f));
-
-            shader.SetUniformMat4("model", model);
-
-            FuxEngine::Renderer::Draw(mesh);
+            for (const auto& entity : scene.GetEntities())
+            {
+                FuxEngine::Renderer::Draw(*entity);
+            }
 
             window.Update();
         }

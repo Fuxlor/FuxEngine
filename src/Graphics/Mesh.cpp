@@ -26,7 +26,7 @@ namespace FuxEngine
     void Mesh::SetLayout()
     {
         BufferLayout layout = {
-            { ShaderDataType::Float2, "aPos" },
+            { ShaderDataType::Float3, "aPos" },
             { ShaderDataType::Float3, "aColor" },
             { ShaderDataType::Float2, "aTexCoord" }
         };

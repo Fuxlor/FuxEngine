@@ -1,6 +1,8 @@
 #pragma once
 
 #include <glad/glad.h>
+#include "Core/Entity.h"
+#include "Graphics/Shader.h"
 
 namespace FuxEngine
 {
@@ -20,5 +22,7 @@ namespace FuxEngine
         );
 
         static void Draw(const Mesh& mesh);
+
+        static void Draw(Entity& entity);
     };
 }
