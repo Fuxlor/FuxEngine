@@ -10,8 +10,8 @@ namespace FuxEngine
     {
     public:
         Shader(
-            const char* vertexSource,
-            const char* fragmentSource
+            const std::string& vertexPath,
+            const std::string& fragmentPath
         );
 
         ~Shader();
@@ -20,11 +20,15 @@ namespace FuxEngine
         void Unbind() const;
 
         void SetUniform1i(const std::string& name, int value) const;
+        void SetUniform1f(const std::string& name, float value) const;
+        void SetUniform3f(const char* name, float x, float y, float z);
         void SetUniformMat4(const std::string& name, const glm::mat4& matrix) const;
 
         unsigned int GetID() const;
 
     private:
+        static std::string ReadFile(const std::string& path);
+
         unsigned int m_RendererID = 0;
     };
 }

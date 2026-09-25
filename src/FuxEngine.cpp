@@ -2,6 +2,8 @@
 #include "Core/Camera.h"
 #include "Core/Entity.h"
 #include "Core/Scene.h"
+#include "Core/Light.h"
+#include "Core/PointLight.h"
 #include "Graphics/Shader.h"
 #include "Graphics/VertexArray.h"
 #include "Graphics/VertexBuffer.h"
@@ -48,81 +50,45 @@ void MouseCallback(GLFWwindow* window, double xpos, double ypos)
 
 int main()
 {
-    const char* vertexShaderSource = R"(
-        #version 330 core
-
-        layout (location = 0) in vec3 aPos;
-        layout (location = 1) in vec3 aColor;
-        layout (location = 2) in vec2 aTexCoord;
-
-        out vec3 ourColor;
-        out vec2 TexCoord;
-
-        uniform mat4 model;
-        uniform mat4 view;
-        uniform mat4 projection;
-
-        void main()
-        {
-            gl_Position = projection * view * model * vec4(aPos, 1.0);
-            ourColor = aColor;
-            TexCoord = aTexCoord;
-        }
-    )";
-    const char* fragmentShaderSource = R"(
-        #version 330 core
-
-        in vec3 ourColor;
-        in vec2 TexCoord;
-
-        out vec4 FragColor;
-
-        uniform sampler2D ourTexture;
-
-        void main()
-        {
-            FragColor = texture(ourTexture, TexCoord);
-        }
-    )";
 
     float vertices[] = {
-        // position              // color             // UV
+        // position              // normal             // color             // UV
 
         // Front
-        -0.5f, -0.5f,  0.5f,     1.0f, 0.0f, 0.0f,   0.0f, 0.0f,
-         0.5f, -0.5f,  0.5f,     0.0f, 1.0f, 0.0f,   1.0f, 0.0f,
-         0.5f,  0.5f,  0.5f,     0.0f, 0.0f, 1.0f,   1.0f, 1.0f,
-        -0.5f,  0.5f,  0.5f,     1.0f, 1.0f, 0.0f,   0.0f, 1.0f,
+        -0.5f, -0.5f,  0.5f,     0.0f,  0.0f,  1.0f,  1.0f, 0.0f, 0.0f,   0.0f, 0.0f,
+         0.5f, -0.5f,  0.5f,     0.0f,  0.0f,  1.0f,  0.0f, 1.0f, 0.0f,   1.0f, 0.0f,
+         0.5f,  0.5f,  0.5f,     0.0f,  0.0f,  1.0f,  0.0f, 0.0f, 1.0f,   1.0f, 1.0f,
+        -0.5f,  0.5f,  0.5f,     0.0f,  0.0f,  1.0f,  1.0f, 1.0f, 0.0f,   0.0f, 1.0f,
 
         // Back
-        -0.5f, -0.5f, -0.5f,     1.0f, 0.0f, 0.0f,   1.0f, 0.0f,
-        -0.5f,  0.5f, -0.5f,     0.0f, 1.0f, 0.0f,   1.0f, 1.0f,
-         0.5f,  0.5f, -0.5f,     0.0f, 0.0f, 1.0f,   0.0f, 1.0f,
-         0.5f, -0.5f, -0.5f,     1.0f, 1.0f, 0.0f,   0.0f, 0.0f,
+        -0.5f, -0.5f, -0.5f,     0.0f,  0.0f, -1.0f,  1.0f, 0.0f, 0.0f,   1.0f, 0.0f,
+        -0.5f,  0.5f, -0.5f,     0.0f,  0.0f, -1.0f,  0.0f, 1.0f, 0.0f,   1.0f, 1.0f,
+         0.5f,  0.5f, -0.5f,     0.0f,  0.0f, -1.0f,  0.0f, 0.0f, 1.0f,   0.0f, 1.0f,
+         0.5f, -0.5f, -0.5f,     0.0f,  0.0f, -1.0f,  1.0f, 1.0f, 0.0f,   0.0f, 0.0f,
 
          // Left
-         -0.5f, -0.5f, -0.5f,     1.0f, 0.0f, 0.0f,   0.0f, 0.0f,
-         -0.5f, -0.5f,  0.5f,     0.0f, 1.0f, 0.0f,   1.0f, 0.0f,
-         -0.5f,  0.5f,  0.5f,     0.0f, 0.0f, 1.0f,   1.0f, 1.0f,
-         -0.5f,  0.5f, -0.5f,     1.0f, 1.0f, 0.0f,   0.0f, 1.0f,
+         -0.5f, -0.5f, -0.5f,    -1.0f,  0.0f,  0.0f,  1.0f, 0.0f, 0.0f,   0.0f, 0.0f,
+         -0.5f, -0.5f,  0.5f,    -1.0f,  0.0f,  0.0f,  0.0f, 1.0f, 0.0f,   1.0f, 0.0f,
+         -0.5f,  0.5f,  0.5f,    -1.0f,  0.0f,  0.0f,  0.0f, 0.0f, 1.0f,   1.0f, 1.0f,
+         -0.5f,  0.5f, -0.5f,    -1.0f,  0.0f,  0.0f,  1.0f, 1.0f, 0.0f,   0.0f, 1.0f,
 
          // Right
-          0.5f, -0.5f,  0.5f,     1.0f, 0.0f, 0.0f,   0.0f, 0.0f,
-          0.5f, -0.5f, -0.5f,     0.0f, 1.0f, 0.0f,   1.0f, 0.0f,
-          0.5f,  0.5f, -0.5f,     0.0f, 0.0f, 1.0f,   1.0f, 1.0f,
-          0.5f,  0.5f,  0.5f,     1.0f, 1.0f, 0.0f,   0.0f, 1.0f,
+          0.5f, -0.5f,  0.5f,     1.0f,  0.0f,  0.0f,  1.0f, 0.0f, 0.0f,   0.0f, 0.0f,
+          0.5f, -0.5f, -0.5f,     1.0f,  0.0f, 0.0f,  0.0f, 1.0f, 0.0f,   1.0f, 0.0f,
+          0.5f,  0.5f, -0.5f,     1.0f, 0.0f, 0.0f,  0.0f, 0.0f, 1.0f,   1.0f, 1.0f,
+          0.5f,  0.5f,  0.5f,     1.0f, 0.0f, 0.0f,  1.0f, 1.0f, 0.0f,   0.0f, 1.0f,
 
           // Top
-          -0.5f,  0.5f,  0.5f,     1.0f, 0.0f, 0.0f,   0.0f, 0.0f,
-           0.5f,  0.5f,  0.5f,     0.0f, 1.0f, 0.0f,   1.0f, 0.0f,
-           0.5f,  0.5f, -0.5f,     0.0f, 0.0f, 1.0f,   1.0f, 1.0f,
-          -0.5f,  0.5f, -0.5f,     1.0f, 1.0f, 0.0f,   0.0f, 1.0f,
+          -0.5f,  0.5f,  0.5f,     0.0f,  1.0f,  0.0f,  1.0f, 0.0f, 0.0f,   0.0f, 0.0f,
+           0.5f,  0.5f,  0.5f,     0.0f,  1.0f, 0.0f,  0.0f, 1.0f, 0.0f,   1.0f, 0.0f,
+           0.5f,  0.5f, -0.5f,     0.0f,  1.0f, 0.0f,  0.0f, 0.0f, 1.0f,   1.0f, 1.0f,
+          -0.5f,  0.5f, -0.5f,     0.0f,  1.0f, 0.0f,  1.0f, 1.0f, 0.0f,   0.0f, 1.0f,
 
           // Bottom
-          -0.5f, -0.5f, -0.5f,     1.0f, 0.0f, 0.0f,   0.0f, 0.0f,
-           0.5f, -0.5f, -0.5f,     0.0f, 1.0f, 0.0f,   1.0f, 0.0f,
-           0.5f, -0.5f,  0.5f,     0.0f, 0.0f, 1.0f,   1.0f, 1.0f,
-          -0.5f, -0.5f,  0.5f,     1.0f, 1.0f, 0.0f,   0.0f, 1.0f
+          -0.5f, -0.5f, -0.5f,     0.0f, -1.0f,  0.0f,  1.0f, 0.0f, 0.0f,   0.0f, 0.0f,
+           0.5f, -0.5f, -0.5f,     0.0f, -1.0f,  0.0f,  0.0f, 1.0f, 0.0f,   1.0f, 0.0f,
+           0.5f, -0.5f,  0.5f,     0.0f, -1.0f,  0.0f,  0.0f, 0.0f, 1.0f,   1.0f, 1.0f,
+          -0.5f, -0.5f,  0.5f,     0.0f, -1.0f,  0.0f,  1.0f, 1.0f, 0.0f,   0.0f, 1.0f
     };
     unsigned int indices[] = {
          0,  1,  2,   2,  3,  0, // Front
@@ -155,11 +121,38 @@ int main()
 
         // SHADERS
         FuxEngine::Shader shader(
-            vertexShaderSource, 
-            fragmentShaderSource
+            "assets/shaders/basic.vert.glsl",
+            "assets/shaders/basic.frag.glsl"
         );
 
         shader.Bind();
+
+        shader.SetUniform1f(
+            "ambientStrength",
+            0.1f
+        );
+
+        shader.SetUniform1f(
+            "constant",
+            1.0f
+        );
+
+        shader.SetUniform1f(
+            "linear",
+            0.09f
+        );
+
+        shader.SetUniform1f(
+            "quadratic",
+            0.032f
+        );
+
+        shader.SetUniform3f(
+            "lightDirection",
+            -0.5f,
+            -1.0f,
+            -0.3f
+        );
 
 		// TEXTURE
         FuxEngine::Texture texture("assets/textures/test.jpg");
@@ -196,12 +189,15 @@ int main()
 
         glEnable(GL_DEPTH_TEST);
 
-        // TRANSFORM
+		// SCENE + ENTITIES
         FuxEngine::Scene scene;
-
         FuxEngine::Entity& cube = scene.CreateEntity(mesh, material);
-
         FuxEngine::Entity& cube2 = scene.CreateEntity(mesh, material);
+        scene.CreateLight<PointLight>(
+            glm::vec3(2.0f, 2.0f, 2.0f),
+            glm::vec3(1.0f),
+            1.0f
+        );
 
         // MAIN LOOP
         float lastFrameTime = 0.0f;
@@ -266,10 +262,7 @@ int main()
             cube.GetTransform().rotation.y = glm::degrees(currentFrameTime);
             cube2.GetTransform().rotation.x = glm::degrees(currentFrameTime);
 
-            for (const auto& entity : scene.GetEntities())
-            {
-                FuxEngine::Renderer::Draw(*entity);
-            }
+            FuxEngine::Renderer::Draw(scene, camera);
 
             window.Update();
         }

@@ -27,6 +27,7 @@ namespace FuxEngine
     {
         BufferLayout layout = {
             { ShaderDataType::Float3, "aPos" },
+            { ShaderDataType::Float3, "aNormal" },
             { ShaderDataType::Float3, "aColor" },
             { ShaderDataType::Float2, "aTexCoord" }
         };

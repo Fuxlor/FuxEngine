@@ -1,19 +1,20 @@
 #pragma once
 
 #include <glad/glad.h>
+
 #include "Core/Entity.h"
-#include "Graphics/Shader.h"
+#include "Core/Scene.h"
+#include "Core/Camera.h"
 
 namespace FuxEngine
 {
-    class VertexArray;
-	class IndexBuffer;
     class Mesh;
 
     class Renderer
     {
     public:
         static void Clear();
+
         static void SetClearColor(
             float r,
             float g,
@@ -23,6 +24,9 @@ namespace FuxEngine
 
         static void Draw(const Mesh& mesh);
 
-        static void Draw(Entity& entity);
+        static void Draw(
+            const Scene& scene,
+            const Camera& camera
+        );
     };
 }

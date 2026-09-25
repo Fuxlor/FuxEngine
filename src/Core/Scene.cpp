@@ -1,7 +1,5 @@
 #include "Core/Scene.h"
 
-#include <memory>
-
 namespace FuxEngine
 {
     Entity& Scene::CreateEntity(
@@ -9,20 +7,25 @@ namespace FuxEngine
         Material& material
     )
     {
-        auto entity = std::make_unique<Entity>(
-            mesh,
-            material
+        m_Entities.push_back(
+            std::make_unique<Entity>(
+                mesh,
+                material
+            )
         );
 
-        Entity& reference = *entity;
-
-        m_Entities.push_back(std::move(entity));
-
-        return reference;
+        return *m_Entities.back();
     }
 
-    const std::vector<std::unique_ptr<Entity>>& Scene::GetEntities() const
+    const std::vector<std::unique_ptr<Entity>>&
+        Scene::GetEntities() const
     {
         return m_Entities;
+    }
+
+    const std::vector<std::unique_ptr<Light>>&
+        Scene::GetLights() const
+    {
+        return m_Lights;
     }
 }

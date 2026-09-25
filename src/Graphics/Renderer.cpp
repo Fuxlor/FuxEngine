@@ -32,17 +32,53 @@ namespace FuxEngine
         );
     }
 
-    void Renderer::Draw(Entity& entity)
+    void Renderer::Draw(
+        const Scene& scene,
+        const Camera& camera
+    )
     {
-        Material& material = entity.GetMaterial();
+        const auto& lights = scene.GetLights();
 
-        material.Bind();
+        if (lights.empty())
+            return;
 
-        material.GetShader().SetUniformMat4(
-            "model",
-            entity.GetTransform().GetMatrix()
-        );
+        const Light& light = *lights[0];
 
-        Draw(entity.GetMesh());
+        for (const auto& entity : scene.GetEntities())
+        {
+            Material& material = entity->GetMaterial();
+
+            material.Bind();
+
+            Shader& shader = material.GetShader();
+
+            shader.SetUniform3f(
+                "lightPosition",
+                light.GetPosition().x,
+                light.GetPosition().y,
+                light.GetPosition().z
+            );
+
+            shader.SetUniform3f(
+                "lightColor",
+                light.GetColor().x * light.GetIntensity(),
+                light.GetColor().y * light.GetIntensity(),
+                light.GetColor().z * light.GetIntensity()
+            );
+
+            shader.SetUniform3f(
+                "viewPosition",
+                camera.GetPosition().x,
+                camera.GetPosition().y,
+                camera.GetPosition().z
+            );
+
+            shader.SetUniformMat4(
+                "model",
+                entity->GetTransform().GetMatrix()
+            );
+
+            Draw(entity->GetMesh());
+        }
     }
 }

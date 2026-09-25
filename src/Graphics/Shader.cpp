@@ -2,15 +2,40 @@
 
 #include <glm/gtc/type_ptr.hpp>
 #include <iostream>
+#include <fstream>
+#include <sstream>
 #include <stdexcept>
 
 namespace FuxEngine
 {
+    std::string Shader::ReadFile(const std::string& path)
+    {
+        std::ifstream file(path);
+
+        if (!file.is_open())
+        {
+            throw std::runtime_error(
+                "Impossible d'ouvrir le shader : " + path
+            );
+        }
+
+        std::stringstream buffer;
+        buffer << file.rdbuf();
+
+        return buffer.str();
+    }
+
     Shader::Shader(
-        const char* vertexSource,
-        const char* fragmentSource
+        const std::string& vertexPath,
+        const std::string& fragmentPath
     )
     {
+        std::string vertexSource = ReadFile(vertexPath);
+        std::string fragmentSource = ReadFile(fragmentPath);
+
+        const char* vertexShaderSource = vertexSource.c_str();
+        const char* fragmentShaderSource = fragmentSource.c_str();
+
         int success;
         char infoLog[512];
     
@@ -22,7 +47,7 @@ namespace FuxEngine
         glShaderSource(
             vertexShader, 
             1, 
-            &vertexSource, 
+            &vertexShaderSource,
             nullptr
         );
         glCompileShader(vertexShader);
@@ -57,7 +82,7 @@ namespace FuxEngine
         glShaderSource(
             fragmentShader, 
             1, 
-            &fragmentSource, 
+            &fragmentShaderSource,
             nullptr
         );
         glCompileShader(fragmentShader);
@@ -149,6 +174,26 @@ namespace FuxEngine
         glUniform1i(
             glGetUniformLocation(m_RendererID, name.c_str()),
             value
+        );
+    }
+
+    void Shader::SetUniform1f(const std::string& name, float value) const
+    {
+        glUniform1f(
+            glGetUniformLocation(m_RendererID, name.c_str()),
+            value
+        );
+    }
+
+    void Shader::SetUniform3f(const char* name, float x,  float y, float z)
+    {
+        GLint location = glGetUniformLocation(m_RendererID, name);
+
+        glUniform3f(
+            location,
+            x,
+            y,
+            z
         );
     }
 
