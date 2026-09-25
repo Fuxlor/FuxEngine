@@ -132,28 +132,6 @@ int main()
             0.1f
         );
 
-        shader.SetUniform1f(
-            "constant",
-            1.0f
-        );
-
-        shader.SetUniform1f(
-            "linear",
-            0.09f
-        );
-
-        shader.SetUniform1f(
-            "quadratic",
-            0.032f
-        );
-
-        shader.SetUniform3f(
-            "lightDirection",
-            -0.5f,
-            -1.0f,
-            -0.3f
-        );
-
 		// TEXTURE
         FuxEngine::Texture texture("assets/textures/test.jpg");
 
@@ -193,10 +171,13 @@ int main()
         FuxEngine::Scene scene;
         FuxEngine::Entity& cube = scene.CreateEntity(mesh, material);
         FuxEngine::Entity& cube2 = scene.CreateEntity(mesh, material);
-        scene.CreateLight<PointLight>(
+        scene.CreateLight<FuxEngine::PointLight>(
             glm::vec3(2.0f, 2.0f, 2.0f),
             glm::vec3(1.0f),
-            1.0f
+            1.0f,
+            1.0f,
+			0.09f,
+			0.032f
         );
 
         // MAIN LOOP

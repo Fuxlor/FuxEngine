@@ -1,6 +1,7 @@
 #include "Graphics/Shader.h"
 
 #include <glm/gtc/type_ptr.hpp>
+#include <string>
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -185,9 +186,9 @@ namespace FuxEngine
         );
     }
 
-    void Shader::SetUniform3f(const char* name, float x,  float y, float z)
+    void Shader::SetUniform3f(const std::string& name, float x,  float y, float z)
     {
-        GLint location = glGetUniformLocation(m_RendererID, name);
+        GLint location = glGetUniformLocation(m_RendererID, name.c_str());
 
         glUniform3f(
             location,

@@ -32,11 +32,7 @@ namespace FuxEngine
         }
 
         const std::vector<std::unique_ptr<Entity>>& GetEntities() const;
-        const std::vector<std::unique_ptr<Light>>&
-            GetLights() const
-        {
-            return m_Lights;
-        }
+        const std::vector<std::unique_ptr<Light>>& GetLights() const;
 
     private:
         std::vector<std::unique_ptr<Entity>> m_Entities;

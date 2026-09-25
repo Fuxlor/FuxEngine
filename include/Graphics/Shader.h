@@ -21,7 +21,7 @@ namespace FuxEngine
 
         void SetUniform1i(const std::string& name, int value) const;
         void SetUniform1f(const std::string& name, float value) const;
-        void SetUniform3f(const char* name, float x, float y, float z);
+        void SetUniform3f(const std::string& name, float x, float y, float z);
         void SetUniformMat4(const std::string& name, const glm::mat4& matrix) const;
 
         unsigned int GetID() const;
