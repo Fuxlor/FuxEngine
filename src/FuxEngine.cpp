@@ -1,6 +1,6 @@
 ﻿#include "Core/Window.h"
 #include "Core/Camera.h"
-#include "Core/CameraController.h"
+#include "Input/CameraController.h"
 #include "Core/Entity.h"
 #include "Core/Scene.h"
 #include "Lighting/PointLight.h"

@@ -1,4 +1,4 @@
-#include "Core/CameraController.h"
+#include "Input/CameraController.h"
 
 #include <stdexcept>
 
@@ -144,3 +144,4 @@ namespace FuxEngine
             camera->SetAspectRatio(m_AspectRatio);
     }
 }
+
