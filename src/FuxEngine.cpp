@@ -1,5 +1,6 @@
 ﻿#include "Core/Window.h"
 #include "Core/Camera.h"
+#include "Core/CameraController.h"
 #include "Core/Entity.h"
 #include "Core/Scene.h"
 #include "Lighting/PointLight.h"
@@ -15,35 +16,6 @@
 
 #include <iostream>
 #include <memory>
-
-void MouseCallback(GLFWwindow* window, double xpos, double ypos)
-{
-    FuxEngine::Camera* camera =static_cast<FuxEngine::Camera*>(glfwGetWindowUserPointer(window));
-
-    static float lastX = 640.0f;
-    static float lastY = 360.0f;
-    static bool firstMouse = true;
-
-    if (firstMouse)
-    {
-        lastX = static_cast<float>(xpos);
-        lastY = static_cast<float>(ypos);
-
-        firstMouse = false;
-    }
-
-    float xOffset = static_cast<float>(xpos) - lastX;
-
-    float yOffset = lastY - static_cast<float>(ypos);
-
-    lastX = static_cast<float>(xpos);
-    lastY = static_cast<float>(ypos);
-
-    camera->ProcessMouseMovement(
-        xOffset,
-        yOffset
-    );
-}
 
 int main()
 {
@@ -77,21 +49,22 @@ int main()
         std::unique_ptr<FuxEngine::Mesh> mesh = FuxEngine::ObjLoader::Load("cube.obj");
         std::unique_ptr<FuxEngine::Mesh> body = FuxEngine::ObjLoader::Load("FinalBaseMesh.obj");
 
-		// PROJECTION MATRIX
-        glm::mat4 projection = glm::perspective(
-            glm::radians(45.0f),   // field of view (FOV)
-            1280.0f / 720.0f,      // aspect ratio
-            0.1f,                  // near plane
-            100.0f                 // far plane
+        // CAMERAS: press 1 or 2 to switch
+        FuxEngine::CameraController cameraController(window.GetNativeWindow());
+        FuxEngine::Camera& freeCamera = cameraController.CreateCamera(
+            glm::vec3(0.0f, 0.0f, 3.0f)
         );
-        FuxEngine::Renderer::SetProjection(projection);
+        freeCamera.SetPerspective(45.0f, 1280.0f / 720.0f, 0.1f, 100.0f);
+        freeCamera.SetMovementSpeed(2.5f);
+        freeCamera.SetMouseSensitivity(0.1f);
 
-		// CAMERA
-        FuxEngine::Camera camera;
-
-        glfwSetWindowUserPointer(window.GetNativeWindow(), &camera);
-        glfwSetInputMode(window.GetNativeWindow(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-        glfwSetCursorPosCallback(window.GetNativeWindow(), MouseCallback);
+        FuxEngine::Camera& overviewCamera = cameraController.CreateCamera(
+            glm::vec3(0.0f, 6.0f, 8.0f)
+        );
+        overviewCamera.SetPerspective(55.0f, 1280.0f / 720.0f, 0.1f, 200.0f);
+        overviewCamera.SetYawPitch(-90.0f, -35.0f);
+        overviewCamera.SetMovementSpeed(5.0f);
+        overviewCamera.SetMouseSensitivity(0.08f);
 
         glEnable(GL_DEPTH_TEST);
 
@@ -133,38 +106,8 @@ int main()
 
             GLFWwindow* nativeWindow = window.GetNativeWindow();
 
-            // CONTROLS
-            if (glfwGetKey(nativeWindow, GLFW_KEY_W) == GLFW_PRESS)
-            {
-                camera.ProcessKeyboard(
-                    FuxEngine::CameraMovement::Forward,
-                    deltaTime
-                );
-            }
-
-            if (glfwGetKey(nativeWindow, GLFW_KEY_S) == GLFW_PRESS)
-            {
-                camera.ProcessKeyboard(
-                    FuxEngine::CameraMovement::Backward,
-                    deltaTime
-                );
-            }
-
-            if (glfwGetKey(nativeWindow, GLFW_KEY_A) == GLFW_PRESS)
-            {
-                camera.ProcessKeyboard(
-                    FuxEngine::CameraMovement::Left,
-                    deltaTime
-                );
-            }
-
-            if (glfwGetKey(nativeWindow, GLFW_KEY_D) == GLFW_PRESS)
-            {
-                camera.ProcessKeyboard(
-                    FuxEngine::CameraMovement::Right,
-                    deltaTime
-                );
-            }
+            // CONTROLS: WASD moves the active camera; keys 1-9 select a camera.
+            cameraController.Update(deltaTime);
 
             // EXIT
             if (glfwGetKey(nativeWindow, GLFW_KEY_ESCAPE) == GLFW_PRESS)
@@ -176,7 +119,7 @@ int main()
             cube.GetTransform().SetRotation(glm::vec3(0.0f, glm::degrees(currentFrameTime), 0.0f));
             cube2.GetTransform().SetRotation(glm::vec3(glm::degrees(currentFrameTime), 0.0f, 0.0f));
 
-            FuxEngine::Renderer::Draw(scene, camera);
+            FuxEngine::Renderer::Draw(scene, cameraController.GetActiveCamera());
 
             window.Update();
         }

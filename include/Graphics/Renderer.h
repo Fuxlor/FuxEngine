@@ -15,7 +15,6 @@ namespace FuxEngine
     public:
         static void Clear();
 
-        static void SetProjection(const glm::mat4& projection);
         static void SetAmbientStrength(float strength);
 
         static void SetClearColor(
@@ -33,7 +32,6 @@ namespace FuxEngine
         );
 
     private:
-        static glm::mat4 s_Projection;
         static float s_AmbientStrength;
     };
 }

@@ -17,7 +17,6 @@
 
 namespace FuxEngine
 {
-    glm::mat4 Renderer::s_Projection(1.0f);
     float Renderer::s_AmbientStrength = 0.1f;
 
     namespace
@@ -88,11 +87,10 @@ namespace FuxEngine
             const Scene& scene,
             const Camera& camera,
             Shader& shader,
-            const glm::mat4& projection,
             float ambientStrength
         )
         {
-            shader.SetUniformMat4("projection", projection);
+            shader.SetUniformMat4("projection", camera.GetProjectionMatrix());
             shader.SetUniformMat4("view", camera.GetViewMatrix());
             shader.SetUniform3f(
                 "viewPosition",
@@ -126,11 +124,6 @@ namespace FuxEngine
     )
     {
         glClearColor(r, g, b, a);
-    }
-
-    void Renderer::SetProjection(const glm::mat4& projection)
-    {
-        s_Projection = projection;
     }
 
     void Renderer::SetAmbientStrength(float strength)
@@ -167,7 +160,7 @@ namespace FuxEngine
             Shader& shader = material.GetShader();
             if (preparedShader != &shader)
             {
-                PrepareFrameUniforms(scene, camera, shader, s_Projection, s_AmbientStrength);
+                PrepareFrameUniforms(scene, camera, shader, s_AmbientStrength);
                 preparedShader = &shader;
             }
             PrepareEntityUniforms(*entity, shader);

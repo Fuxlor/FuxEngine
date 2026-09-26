@@ -22,6 +22,7 @@ add_executable(FuxEngine
     src/FuxEngine.cpp
     src/Core/Window.cpp
     src/Core/Camera.cpp
+    src/Core/CameraController.cpp
     src/Core/Entity.cpp
     src/Core/Scene.cpp
     src/Graphics/Shader.cpp
