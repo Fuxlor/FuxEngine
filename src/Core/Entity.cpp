@@ -1,14 +1,45 @@
 #include "Core/Entity.h"
 
+#include <utility>
+
 namespace FuxEngine
 {
     Entity::Entity(
+        EntityId id,
+        std::string name,
         Mesh& mesh,
         Material& material
     )
-        : m_Mesh(mesh),
+        : m_Id(id),
+        m_Name(std::move(name)),
+        m_Mesh(mesh),
         m_Material(material)
     {}
+
+    EntityId Entity::GetId() const
+    {
+        return m_Id;
+    }
+
+    const std::string& Entity::GetName() const
+    {
+        return m_Name;
+    }
+
+    void Entity::SetName(std::string name)
+    {
+        m_Name = std::move(name);
+    }
+
+    bool Entity::IsEnabled() const
+    {
+        return m_Enabled;
+    }
+
+    void Entity::SetEnabled(bool enabled)
+    {
+        m_Enabled = enabled;
+    }
 
     Transform& Entity::GetTransform()
     {

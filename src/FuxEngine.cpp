@@ -2,8 +2,8 @@
 #include "Core/Camera.h"
 #include "Core/Entity.h"
 #include "Core/Scene.h"
-#include "Core/Light.h"
-#include "Core/PointLight.h"
+#include "Lighting/Light.h"
+#include "Lighting/PointLight.h"
 #include "Graphics/Shader.h"
 #include "Graphics/VertexArray.h"
 #include "Graphics/VertexBuffer.h"
@@ -125,12 +125,7 @@ int main()
             "assets/shaders/basic.frag.glsl"
         );
 
-        shader.Bind();
-
-        shader.SetUniform1f(
-            "ambientStrength",
-            0.1f
-        );
+        FuxEngine::Renderer::SetAmbientStrength(0.1f);
 
 		// TEXTURE
         FuxEngine::Texture texture("assets/textures/test.jpg");
@@ -156,7 +151,7 @@ int main()
             0.1f,                  // near plane
             100.0f                 // far plane
         );
-        shader.SetUniformMat4("projection", projection);
+        FuxEngine::Renderer::SetProjection(projection);
 
 		// CAMERA
         FuxEngine::Camera camera;
@@ -171,6 +166,8 @@ int main()
         FuxEngine::Scene scene;
         FuxEngine::Entity& cube = scene.CreateEntity(mesh, material);
         FuxEngine::Entity& cube2 = scene.CreateEntity(mesh, material);
+        cube.GetTransform().SetPosition(glm::vec3(-1.5f, 0.0f, 0.0f));
+        cube2.GetTransform().SetPosition(glm::vec3(1.5f, 0.0f, 0.0f));
         scene.CreateLight<FuxEngine::PointLight>(
             glm::vec3(2.0f, 2.0f, 2.0f),
             glm::vec3(1.0f),
@@ -178,6 +175,15 @@ int main()
             1.0f,
 			0.09f,
 			0.032f
+        );
+        scene.CreateLight<FuxEngine::SpotLight>(
+            glm::vec3(-2.0f, -2.0f, 0.0f), // position sous les cubes
+            glm::vec3(0.0f, 1.0f, 0.0f),  // direction vers le haut
+            glm::vec3(1.0f, 0.85f, 0.65f), // couleur chaude
+            3.0f,                           // intensité
+            glm::cos(glm::radians(20.0f)),  // cutoff intérieur
+            glm::cos(glm::radians(35.0f)),  // cutoff extérieur
+            1.0f, 0.09f, 0.032f            // atténuation
         );
 
         // MAIN LOOP
@@ -228,20 +234,11 @@ int main()
             if (glfwGetKey(nativeWindow, GLFW_KEY_ESCAPE) == GLFW_PRESS)
                 glfwSetWindowShouldClose(nativeWindow, true);
 
-			// VIEW MATRIX
-            shader.SetUniformMat4(
-                "view",
-                camera.GetViewMatrix()
-            );
-
 			// RENDER
             FuxEngine::Renderer::Clear();
 
-            cube.GetTransform().position.x = -1.5f;
-            cube2.GetTransform().position.x = 1.5f;
-
-            cube.GetTransform().rotation.y = glm::degrees(currentFrameTime);
-            cube2.GetTransform().rotation.x = glm::degrees(currentFrameTime);
+            cube.GetTransform().SetRotation(glm::vec3(0.0f, glm::degrees(currentFrameTime), 0.0f));
+            cube2.GetTransform().SetRotation(glm::vec3(glm::degrees(currentFrameTime), 0.0f, 0.0f));
 
             FuxEngine::Renderer::Draw(scene, camera);
 
