@@ -5,7 +5,10 @@
 #include "Core/Scene.h"
 #include "Lighting/PointLight.h"
 #include "Lighting/SpotLight.h"
+#include "Lighting/DirectionalLight.h"
 #include "Graphics/Renderer.h"
+#include "Graphics/PostProcessor.h"
+#include "Graphics/ShadowRenderer.h"
 #include "Resources/MaterialManager.h"
 #include "Resources/ObjLoader.h"
 #include "Resources/ShaderManager.h"
@@ -44,7 +47,12 @@ int main()
         FuxEngine::TextureManager textureManager;
         FuxEngine::MaterialManager materialManager(shaderManager, textureManager);
         FuxEngine::Material& material = materialManager.Load("basic");
-        FuxEngine::Renderer::SetAmbientStrength(0.1f);
+        FuxEngine::Shader& postProcessShader = shaderManager.Load("postprocess");
+        FuxEngine::PostProcessor postProcessor(postProcessShader, window.GetNativeWindow());
+        postProcessor.SetExposure(0.7f);
+        FuxEngine::Shader& depthShader = shaderManager.Load("depth");
+        FuxEngine::ShadowRenderer shadowRenderer(depthShader);
+        FuxEngine::Renderer::SetAmbientStrength(0.025f);
 
         std::unique_ptr<FuxEngine::Mesh> mesh = FuxEngine::ObjLoader::Load("cube.obj");
         std::unique_ptr<FuxEngine::Mesh> body = FuxEngine::ObjLoader::Load("FinalBaseMesh.obj");
@@ -79,24 +87,31 @@ int main()
         bodyEntity.GetTransform().SetScale(glm::vec3(0.1f));
         scene.CreateLight<FuxEngine::PointLight>(
             glm::vec3(2.0f, 2.0f, 2.0f),
-            glm::vec3(1.0f),
+            glm::vec3(1.0f, 0.85f, 0.65f),
             1.0f,
             1.0f,
-			0.09f,
-			0.032f
+			0.12f,
+			0.08f
         );
         scene.CreateLight<FuxEngine::SpotLight>(
             glm::vec3(-2.0f, -2.0f, 0.0f), // position sous les cubes
             glm::vec3(0.0f, 1.0f, 0.0f),  // direction vers le haut
             glm::vec3(1.0f, 0.85f, 0.65f), // couleur chaude
-            3.0f,                           // intensité
+            0.35f,                          // intensité
             glm::cos(glm::radians(20.0f)),  // cutoff intérieur
             glm::cos(glm::radians(35.0f)),  // cutoff extérieur
-            1.0f, 0.09f, 0.032f            // atténuation
+            1.0f, 0.12f, 0.08f             // atténuation
         );
+        /*scene.CreateLight<FuxEngine::DirectionalLight>(
+            glm::vec3(-0.2f, -1.0f, -0.3f),
+            glm::vec3(1.0f),
+            0.2f
+        );*/
 
         // MAIN LOOP
         float lastFrameTime = 0.0f;
+        bool wireframe = false;
+        bool wireframeKeyWasPressed = false;
         while (!window.ShouldClose())
         {
 			// TIME
@@ -105,6 +120,15 @@ int main()
             lastFrameTime = currentFrameTime;
 
             GLFWwindow* nativeWindow = window.GetNativeWindow();
+
+            const bool wireframeKeyIsPressed =
+                glfwGetKey(nativeWindow, GLFW_KEY_F) == GLFW_PRESS;
+            if (wireframeKeyIsPressed && !wireframeKeyWasPressed)
+            {
+                wireframe = !wireframe;
+                FuxEngine::Renderer::SetWireframe(wireframe);
+            }
+            wireframeKeyWasPressed = wireframeKeyIsPressed;
 
             // CONTROLS: WASD moves the active camera; keys 1-9 select a camera.
             cameraController.Update(deltaTime);
@@ -119,7 +143,12 @@ int main()
             cube.GetTransform().SetRotation(glm::vec3(0.0f, glm::degrees(currentFrameTime), 0.0f));
             cube2.GetTransform().SetRotation(glm::vec3(glm::degrees(currentFrameTime), 0.0f, 0.0f));
 
-            FuxEngine::Renderer::Draw(scene, cameraController.GetActiveCamera());
+            FuxEngine::Renderer::Draw(
+                scene,
+                cameraController.GetActiveCamera(),
+                &postProcessor,
+                &shadowRenderer
+            );
 
             window.Update();
         }

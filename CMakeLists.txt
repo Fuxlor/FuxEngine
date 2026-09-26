@@ -31,6 +31,9 @@ add_executable(FuxEngine
     src/Graphics/Renderer.cpp
     src/Graphics/IndexBuffer.cpp
     src/Graphics/Mesh.cpp
+    src/Graphics/Framebuffer.cpp
+    src/Graphics/PostProcessor.cpp
+    src/Graphics/ShadowRenderer.cpp
     src/Graphics/Texture.cpp
     src/Graphics/Transform.cpp
     src/Graphics/Material.cpp

@@ -53,6 +53,19 @@ uniform int spotLightCount;
 uniform vec3 viewPosition;
 uniform float ambientStrength;
 uniform sampler2D ourTexture;
+uniform sampler2D normalMap;
+uniform sampler2D emissiveMap;
+uniform sampler2D shadowMap;
+uniform mat4 lightSpaceMatrix;
+uniform bool hasNormalMap;
+uniform bool hasEmissiveMap;
+uniform bool hasShadowMap;
+uniform bool doubleSided;
+uniform bool gammaCorrection;
+uniform float materialOpacity;
+uniform float emissiveStrength;
+uniform float materialShininess;
+uniform float materialSpecularStrength;
 
 vec3 CalculatePointLight(PointLight light, vec3 normal, vec3 viewDirection, vec3 textureColor)
 {
@@ -68,36 +81,61 @@ vec3 CalculatePointLight(PointLight light, vec3 normal, vec3 viewDirection, vec3
 
     float diffuse = max(dot(normal, lightDirection), 0.0);
 
-    vec3 reflectDirection = reflect(-lightDirection, normal);
+    vec3 halfwayDirection = normalize(lightDirection + viewDirection);
 
     float specular = pow(
-        max(dot(viewDirection, reflectDirection), 0.0),
-        32.0
+        max(dot(normal, halfwayDirection), 0.0),
+        materialShininess
     );
 
     vec3 diffuseColor = textureColor * light.color * light.intensity * diffuse;
-    vec3 specularColor = light.color * light.intensity * specular;
+    vec3 specularColor = light.color * light.intensity * specular * materialSpecularStrength;
 
     return (diffuseColor + specularColor) * attenuation;
 }
 
-vec3 CalculateDirectionalLight(DirectionalLight light, vec3 normal, vec3 viewDirection, vec3 textureColor)
+float CalculateShadow(vec3 normal, vec3 lightDirection)
+{
+    if (!hasShadowMap)
+        return 0.0;
+
+    vec4 lightSpacePosition = lightSpaceMatrix * vec4(FragPos, 1.0);
+    vec3 projected = lightSpacePosition.xyz / lightSpacePosition.w;
+    projected = projected * 0.5 + 0.5;
+    if (projected.z > 1.0 || any(lessThan(projected.xy, vec2(0.0))) || any(greaterThan(projected.xy, vec2(1.0))))
+        return 0.0;
+
+    float bias = max(0.0005, 0.004 * (1.0 - dot(normal, lightDirection)));
+    vec2 texelSize = 1.0 / vec2(textureSize(shadowMap, 0));
+    float shadow = 0.0;
+    for (int x = -1; x <= 1; ++x)
+    {
+        for (int y = -1; y <= 1; ++y)
+        {
+            float closestDepth = texture(shadowMap, projected.xy + vec2(x, y) * texelSize).r;
+            shadow += projected.z - bias > closestDepth ? 1.0 : 0.0;
+        }
+    }
+    return shadow / 9.0;
+}
+
+vec3 CalculateDirectionalLight(DirectionalLight light, vec3 normal, vec3 viewDirection, vec3 textureColor, float shadow)
 {
     vec3 lightDirection = normalize(-light.direction);
 
     float diffuse = max(dot(normal, lightDirection), 0.0);
 
-    vec3 reflectDirection = reflect(-lightDirection, normal);
+    vec3 halfwayDirection = normalize(lightDirection + viewDirection);
 
     float specular = pow(
-        max(dot(viewDirection, reflectDirection), 0.0),
-        32.0
+        max(dot(normal, halfwayDirection), 0.0),
+        materialShininess
     );
 
     vec3 diffuseColor = textureColor * light.color * light.intensity * diffuse;
-    vec3 specularColor = light.color * light.intensity * specular;
+    vec3 specularColor = light.color * light.intensity * specular * materialSpecularStrength;
 
-    return diffuseColor + specularColor;
+    return (diffuseColor + specularColor) * (1.0 - shadow);
 }
 
 vec3 CalculateSpotLight(SpotLight light, vec3 normal, vec3 viewDirection, vec3 textureColor)
@@ -124,15 +162,15 @@ vec3 CalculateSpotLight(SpotLight light, vec3 normal, vec3 viewDirection, vec3 t
 
     float diffuse = max(dot(normal, lightDirection), 0.0);
 
-    vec3 reflectDirection = reflect(-lightDirection, normal);
+    vec3 halfwayDirection = normalize(lightDirection + viewDirection);
 
     float specular = pow(
-        max(dot(viewDirection, reflectDirection), 0.0),
-        32.0
+        max(dot(normal, halfwayDirection), 0.0),
+        materialShininess
     );
 
     vec3 diffuseColor = textureColor * light.color * light.intensity * diffuse;
-    vec3 specularColor = light.color * light.intensity * specular;
+    vec3 specularColor = light.color * light.intensity * specular * materialSpecularStrength;
 
     return (diffuseColor + specularColor) * attenuation * intensity;
 }
@@ -140,8 +178,24 @@ vec3 CalculateSpotLight(SpotLight light, vec3 normal, vec3 viewDirection, vec3 t
 void main()
 {
     vec3 normal = normalize(Normal);
+    if (doubleSided && !gl_FrontFacing)
+        normal = -normal;
+
+    if (hasNormalMap)
+    {
+        vec3 positionDx = dFdx(FragPos);
+        vec3 positionDy = dFdy(FragPos);
+        vec2 texcoordDx = dFdx(TexCoord);
+        vec2 texcoordDy = dFdy(TexCoord);
+        vec3 tangent = normalize(positionDx * texcoordDy.y - positionDy * texcoordDx.y);
+        vec3 bitangent = normalize(-positionDx * texcoordDy.x + positionDy * texcoordDx.x);
+        vec3 tangentNormal = texture(normalMap, TexCoord).xyz * 2.0 - 1.0;
+        normal = normalize(mat3(tangent, bitangent, normal) * tangentNormal);
+    }
+
     vec3 viewDirection = normalize(viewPosition - FragPos);
-    vec3 textureColor = texture(ourTexture, TexCoord).rgb;
+    vec4 albedoSample = texture(ourTexture, TexCoord);
+    vec3 textureColor = albedoSample.rgb;
 
     vec3 finalColor = textureColor * ambientStrength;
 
@@ -157,11 +211,14 @@ void main()
 
     for (int i = 0; i < directionalLightCount; i++)
     {
+        vec3 lightDirection = normalize(-directionalLights[i].direction);
+        float shadow = i == 0 ? CalculateShadow(normal, lightDirection) : 0.0;
         finalColor += CalculateDirectionalLight(
             directionalLights[i],
             normal,
             viewDirection,
-            textureColor
+            textureColor,
+            shadow
         );
     }
 
@@ -175,5 +232,10 @@ void main()
         );
     }
 
-    FragColor = vec4(finalColor, 1.0);
+    if (hasEmissiveMap)
+        finalColor += texture(emissiveMap, TexCoord).rgb * emissiveStrength;
+
+    if (gammaCorrection)
+        finalColor = pow(max(finalColor, vec3(0.0)), vec3(1.0 / 2.2));
+    FragColor = vec4(finalColor, albedoSample.a * materialOpacity);
 }

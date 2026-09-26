@@ -45,6 +45,15 @@ namespace FuxEngine
 
             throw std::runtime_error("Failed to initialize GLAD");
         }
+
+        glViewport(0, 0, width, height);
+        glfwSetFramebufferSizeCallback(
+            m_Window,
+            [](GLFWwindow*, int framebufferWidth, int framebufferHeight)
+            {
+                glViewport(0, 0, framebufferWidth, framebufferHeight);
+            }
+        );
     }
 
     Window::~Window()

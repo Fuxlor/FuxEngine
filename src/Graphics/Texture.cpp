@@ -6,7 +6,7 @@
 
 namespace FuxEngine
 {
-    Texture::Texture(const std::string& path)
+    Texture::Texture(const std::string& path, bool colorTexture)
         : m_RendererID(0),
         m_Path(path),
         m_Width(0),
@@ -64,10 +64,19 @@ namespace FuxEngine
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
+        GLenum internalFormat = format;
+        if (colorTexture)
+        {
+            if (m_Channels == 3)
+                internalFormat = GL_SRGB8;
+            else if (m_Channels == 4)
+                internalFormat = GL_SRGB8_ALPHA8;
+        }
+
         glTexImage2D(
             GL_TEXTURE_2D,
             0,
-            format,
+            internalFormat,
             m_Width,
             m_Height,
             0,

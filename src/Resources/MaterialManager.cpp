@@ -45,6 +45,13 @@ namespace FuxEngine
 
         std::string shaderName;
         std::string textureName;
+        std::string normalMapName;
+        std::string emissiveMapName;
+        float opacity = 1.0f;
+        float emissiveStrength = 0.0f;
+        float shininess = 32.0f;
+        float specularStrength = 0.25f;
+        bool doubleSided = false;
         std::string line;
         std::size_t lineNumber = 0;
         while (std::getline(file, line))
@@ -64,6 +71,27 @@ namespace FuxEngine
                 shaderName = value;
             else if (keyName == "texture")
                 textureName = value;
+            else if (keyName == "normalMap")
+                normalMapName = value;
+            else if (keyName == "emissiveMap")
+                emissiveMapName = value;
+            else if (keyName == "opacity")
+                opacity = std::stof(value);
+            else if (keyName == "emissiveStrength")
+                emissiveStrength = std::stof(value);
+            else if (keyName == "shininess")
+                shininess = std::stof(value);
+            else if (keyName == "specularStrength")
+                specularStrength = std::stof(value);
+            else if (keyName == "doubleSided")
+            {
+                if (value == "true")
+                    doubleSided = true;
+                else if (value == "false")
+                    doubleSided = false;
+                else
+                    throw std::runtime_error("doubleSided doit valoir true ou false dans " + path.string());
+            }
             else
                 throw std::runtime_error("Propriete inconnue '" + keyName + "' dans " + path.string());
         }
@@ -72,8 +100,24 @@ namespace FuxEngine
             throw std::runtime_error("Le material doit definir 'shader' et 'texture' : " + path.string());
 
         Shader& shader = m_Shaders.Load(shaderName);
-        Texture& texture = m_Textures.Load(textureName);
-        auto material = std::make_unique<Material>(shader, texture);
+        Texture& texture = m_Textures.Load(textureName, true);
+        Texture* normalMap = normalMapName.empty()
+            ? nullptr
+            : &m_Textures.Load(normalMapName, false);
+        Texture* emissiveMap = emissiveMapName.empty()
+            ? nullptr
+            : &m_Textures.Load(emissiveMapName, true);
+        auto material = std::make_unique<Material>(
+            shader,
+            texture,
+            normalMap,
+            emissiveMap,
+            opacity,
+            emissiveStrength,
+            shininess,
+            specularStrength,
+            doubleSided
+        );
         Material& reference = *material;
         m_Materials.emplace(key, std::move(material));
         return reference;

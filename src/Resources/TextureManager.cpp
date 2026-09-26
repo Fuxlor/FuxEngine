@@ -8,15 +8,16 @@ namespace FuxEngine
         : m_TextureDirectory(std::move(textureDirectory))
     {}
 
-    Texture& TextureManager::Load(const std::string& name)
+    Texture& TextureManager::Load(const std::string& name, bool colorTexture)
     {
         const std::filesystem::path path = m_TextureDirectory / name;
-        const std::string key = std::filesystem::absolute(path).lexically_normal().generic_string();
+        const std::string key = std::filesystem::absolute(path).lexically_normal().generic_string() +
+            (colorTexture ? "|srgb" : "|linear");
 
         if (const auto found = m_Textures.find(key); found != m_Textures.end())
             return *found->second;
 
-        auto texture = std::make_unique<Texture>(path.string());
+        auto texture = std::make_unique<Texture>(path.string(), colorTexture);
         Texture& reference = *texture;
         m_Textures.emplace(key, std::move(texture));
         return reference;

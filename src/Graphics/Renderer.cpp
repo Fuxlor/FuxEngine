@@ -10,14 +10,18 @@
 #include "Graphics/IndexBuffer.h"
 #include "Graphics/VertexArray.h"
 #include "Graphics/Mesh.h"
+#include "Graphics/PostProcessor.h"
+#include "Graphics/ShadowRenderer.h"
 
 #include <algorithm>
 #include <cstddef>
+#include <vector>
 #include <string>
 
 namespace FuxEngine
 {
     float Renderer::s_AmbientStrength = 0.1f;
+    bool Renderer::s_Wireframe = false;
 
     namespace
     {
@@ -87,7 +91,9 @@ namespace FuxEngine
             const Scene& scene,
             const Camera& camera,
             Shader& shader,
-            float ambientStrength
+            float ambientStrength,
+            bool gammaCorrection,
+            ShadowRenderer* shadowRenderer
         )
         {
             shader.SetUniformMat4("projection", camera.GetProjectionMatrix());
@@ -99,6 +105,16 @@ namespace FuxEngine
                 camera.GetPosition().z
             );
             shader.SetUniform1f("ambientStrength", ambientStrength);
+            shader.SetUniform1i("gammaCorrection", gammaCorrection ? 1 : 0);
+            const bool hasShadowMap = shadowRenderer && shadowRenderer->HasShadowMap();
+            shader.SetUniform1i("hasShadowMap", hasShadowMap ? 1 : 0);
+            shader.SetUniform1i("shadowMap", 3);
+            if (shadowRenderer)
+            {
+                shader.SetUniformMat4("lightSpaceMatrix", shadowRenderer->GetLightSpaceMatrix());
+                if (hasShadowMap)
+                    shadowRenderer->BindTexture(3);
+            }
             UploadLights(scene, shader);
         }
 
@@ -131,6 +147,11 @@ namespace FuxEngine
         s_AmbientStrength = strength;
     }
 
+    void Renderer::SetWireframe(bool enabled)
+    {
+        s_Wireframe = enabled;
+    }
+
     void Renderer::Draw(const Mesh& mesh)
     {
         mesh.GetVertexArray().Bind();
@@ -145,27 +166,94 @@ namespace FuxEngine
 
     void Renderer::Draw(
         const Scene& scene,
-        const Camera& camera
+        const Camera& camera,
+        PostProcessor* postProcessor,
+        ShadowRenderer* shadowRenderer
     )
     {
-        Shader* preparedShader = nullptr;
+        if (shadowRenderer)
+            shadowRenderer->Render(scene);
+        if (postProcessor)
+            postProcessor->BeginScene();
+
+        std::vector<Entity*> opaqueEntities;
+        std::vector<Entity*> transparentEntities;
         for (const auto& entity : scene.GetEntities())
         {
             if (!entity->IsEnabled())
                 continue;
 
-            Material& material = entity->GetMaterial();
+            if (entity->GetMaterial().IsTransparent())
+                transparentEntities.push_back(entity.get());
+            else
+                opaqueEntities.push_back(entity.get());
+        }
+
+        const glm::vec3 cameraPosition = camera.GetPosition();
+        std::sort(
+            transparentEntities.begin(),
+            transparentEntities.end(),
+            [&cameraPosition](const Entity* left, const Entity* right)
+            {
+                const glm::vec3 leftPosition(left->GetTransform().GetWorldMatrix()[3]);
+                const glm::vec3 rightPosition(right->GetTransform().GetWorldMatrix()[3]);
+                const glm::vec3 leftDelta = leftPosition - cameraPosition;
+                const glm::vec3 rightDelta = rightPosition - cameraPosition;
+                return glm::dot(leftDelta, leftDelta) > glm::dot(rightDelta, rightDelta);
+            }
+        );
+
+        Shader* preparedShader = nullptr;
+        auto drawEntity = [&](Entity& entity)
+        {
+            Material& material = entity.GetMaterial();
             material.Bind();
 
             Shader& shader = material.GetShader();
             if (preparedShader != &shader)
             {
-                PrepareFrameUniforms(scene, camera, shader, s_AmbientStrength);
+                PrepareFrameUniforms(
+                    scene,
+                    camera,
+                    shader,
+                    s_AmbientStrength,
+                    postProcessor == nullptr,
+                    shadowRenderer
+                );
                 preparedShader = &shader;
             }
-            PrepareEntityUniforms(*entity, shader);
+            PrepareEntityUniforms(entity, shader);
 
-            Draw(entity->GetMesh());
-        }
+            if (material.IsDoubleSided())
+                glDisable(GL_CULL_FACE);
+            else
+            {
+                glEnable(GL_CULL_FACE);
+                glCullFace(GL_BACK);
+                glFrontFace(GL_CCW);
+            }
+
+            Draw(entity.GetMesh());
+        };
+
+        glPolygonMode(GL_FRONT_AND_BACK, s_Wireframe ? GL_LINE : GL_FILL);
+        glDisable(GL_BLEND);
+        glDepthMask(GL_TRUE);
+        for (Entity* entity : opaqueEntities)
+            drawEntity(*entity);
+
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        glDepthMask(GL_FALSE);
+        for (Entity* entity : transparentEntities)
+            drawEntity(*entity);
+
+        glDepthMask(GL_TRUE);
+        glDisable(GL_BLEND);
+        glEnable(GL_CULL_FACE);
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+        if (postProcessor)
+            postProcessor->Present();
     }
 }

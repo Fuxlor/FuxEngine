@@ -8,6 +8,8 @@
 
 namespace FuxEngine
 {
+    class PostProcessor;
+    class ShadowRenderer;
     class Mesh;
 
     class Renderer
@@ -16,6 +18,7 @@ namespace FuxEngine
         static void Clear();
 
         static void SetAmbientStrength(float strength);
+        static void SetWireframe(bool enabled);
 
         static void SetClearColor(
             float r,
@@ -28,10 +31,13 @@ namespace FuxEngine
 
         static void Draw(
             const Scene& scene,
-            const Camera& camera
+            const Camera& camera,
+            PostProcessor* postProcessor = nullptr,
+            ShadowRenderer* shadowRenderer = nullptr
         );
 
     private:
         static float s_AmbientStrength;
+        static bool s_Wireframe;
     };
 }

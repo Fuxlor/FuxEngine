@@ -17,7 +17,7 @@ namespace FuxEngine
             std::filesystem::path textureDirectory = "assets/textures"
         );
 
-        Texture& Load(const std::string& name);
+        Texture& Load(const std::string& name, bool colorTexture = false);
         std::size_t GetCachedCount() const;
 
     private:

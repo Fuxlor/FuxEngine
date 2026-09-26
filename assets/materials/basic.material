@@ -1,3 +1,8 @@
 # Material resources are resolved by their managers.
 shader = basic
 texture = test.jpg
+shininess = 32
+specularStrength = 0.25
+opacity = 1
+emissiveStrength = 0
+doubleSided = false
