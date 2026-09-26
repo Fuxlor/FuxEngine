@@ -17,10 +17,33 @@ project(FuxEngine
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# Ajoutez une source à l'exécutable de ce projet.
-add_executable (FuxEngine "src/FuxEngine.cpp" "src/FuxEngine.h" "third_party/glad/src/glad.c" "include/Core/Window.h" "src/Core/Window.cpp" "include/Graphics/Shader.h" "src/Graphics/Shader.cpp" "include/Graphics/VertexBuffer.h" "src/Graphics/VertexBuffer.cpp" "include/Graphics/VertexArray.h" "src/Graphics/VertexArray.cpp" "include/Graphics/Renderer.h" "src/Graphics/Renderer.cpp" "include/Graphics/IndexBuffer.h" "src/Graphics/IndexBuffer.cpp" "include/Graphics/Mesh.h" "src/Graphics/Mesh.cpp" "include/Graphics/BufferLayout.h" "src/Vendor/stb_image_impl.cpp" "include/Graphics/Texture.h" "src/Graphics/Texture.cpp" "include/Core/Camera.h" "src/Core/Camera.cpp" "include/Graphics/Transform.h" "src/Graphics/Transform.cpp" "include/Core/Entity.h" "src/Core/Entity.cpp" "include/Core/Scene.h" "src/Core/Scene.cpp" "include/Graphics/Material.h" "src/Graphics/Material.cpp" "include/Lighting/Light.h" "src/Lighting/Light.cpp" "include/Lighting/PointLight.h" "src/Lighting/PointLight.cpp" "include/Lighting/DirectionalLight.h" "src/Lighting/DirectionalLight.cpp" "include/Lighting/SpotLight.h" "src/Lighting/SpotLight.cpp"
-        src/FuxEngine.cpp
-        src/FuxEngine.cpp)
+# Sources du moteur
+add_executable(FuxEngine
+    src/FuxEngine.cpp
+    src/Core/Window.cpp
+    src/Core/Camera.cpp
+    src/Core/Entity.cpp
+    src/Core/Scene.cpp
+    src/Graphics/Shader.cpp
+    src/Graphics/VertexBuffer.cpp
+    src/Graphics/VertexArray.cpp
+    src/Graphics/Renderer.cpp
+    src/Graphics/IndexBuffer.cpp
+    src/Graphics/Mesh.cpp
+    src/Graphics/Texture.cpp
+    src/Graphics/Transform.cpp
+    src/Graphics/Material.cpp
+    src/Lighting/Light.cpp
+    src/Lighting/PointLight.cpp
+    src/Lighting/DirectionalLight.cpp
+    src/Lighting/SpotLight.cpp
+    src/Resources/ShaderManager.cpp
+    src/Resources/TextureManager.cpp
+    src/Resources/MaterialManager.cpp
+    src/Resources/ObjLoader.cpp
+    src/Vendor/stb_image_impl.cpp
+    third_party/glad/src/glad.c
+)
 
 if (CMAKE_VERSION VERSION_GREATER 3.12)
   set_property(TARGET FuxEngine PROPERTY CXX_STANDARD 20)
@@ -47,8 +70,7 @@ target_include_directories(FuxEngine PRIVATE
     third_party/glad/include
 )
 
-add_library(stb_image INTERFACE
-        src/FuxEngine.cpp)
+add_library(stb_image INTERFACE)
 
 target_include_directories(stb_image INTERFACE
     ${CMAKE_SOURCE_DIR}/third_party/stb

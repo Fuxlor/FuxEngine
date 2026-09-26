@@ -2,22 +2,19 @@
 #include "Core/Camera.h"
 #include "Core/Entity.h"
 #include "Core/Scene.h"
-#include "Lighting/Light.h"
 #include "Lighting/PointLight.h"
-#include "Graphics/Shader.h"
-#include "Graphics/VertexArray.h"
-#include "Graphics/VertexBuffer.h"
-#include "Graphics/IndexBuffer.h"
+#include "Lighting/SpotLight.h"
 #include "Graphics/Renderer.h"
-#include "Graphics/Mesh.h"
-#include "Graphics/Texture.h"
-#include "Graphics/Transform.h"
-#include "Graphics/Material.h"
+#include "Resources/MaterialManager.h"
+#include "Resources/ObjLoader.h"
+#include "Resources/ShaderManager.h"
+#include "Resources/TextureManager.h"
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
 #include <iostream>
+#include <memory>
 
 void MouseCallback(GLFWwindow* window, double xpos, double ypos)
 {
@@ -51,54 +48,6 @@ void MouseCallback(GLFWwindow* window, double xpos, double ypos)
 int main()
 {
 
-    float vertices[] = {
-        // position              // normal             // color             // UV
-
-        // Front
-        -0.5f, -0.5f,  0.5f,     0.0f,  0.0f,  1.0f,  1.0f, 0.0f, 0.0f,   0.0f, 0.0f,
-         0.5f, -0.5f,  0.5f,     0.0f,  0.0f,  1.0f,  0.0f, 1.0f, 0.0f,   1.0f, 0.0f,
-         0.5f,  0.5f,  0.5f,     0.0f,  0.0f,  1.0f,  0.0f, 0.0f, 1.0f,   1.0f, 1.0f,
-        -0.5f,  0.5f,  0.5f,     0.0f,  0.0f,  1.0f,  1.0f, 1.0f, 0.0f,   0.0f, 1.0f,
-
-        // Back
-        -0.5f, -0.5f, -0.5f,     0.0f,  0.0f, -1.0f,  1.0f, 0.0f, 0.0f,   1.0f, 0.0f,
-        -0.5f,  0.5f, -0.5f,     0.0f,  0.0f, -1.0f,  0.0f, 1.0f, 0.0f,   1.0f, 1.0f,
-         0.5f,  0.5f, -0.5f,     0.0f,  0.0f, -1.0f,  0.0f, 0.0f, 1.0f,   0.0f, 1.0f,
-         0.5f, -0.5f, -0.5f,     0.0f,  0.0f, -1.0f,  1.0f, 1.0f, 0.0f,   0.0f, 0.0f,
-
-         // Left
-         -0.5f, -0.5f, -0.5f,    -1.0f,  0.0f,  0.0f,  1.0f, 0.0f, 0.0f,   0.0f, 0.0f,
-         -0.5f, -0.5f,  0.5f,    -1.0f,  0.0f,  0.0f,  0.0f, 1.0f, 0.0f,   1.0f, 0.0f,
-         -0.5f,  0.5f,  0.5f,    -1.0f,  0.0f,  0.0f,  0.0f, 0.0f, 1.0f,   1.0f, 1.0f,
-         -0.5f,  0.5f, -0.5f,    -1.0f,  0.0f,  0.0f,  1.0f, 1.0f, 0.0f,   0.0f, 1.0f,
-
-         // Right
-          0.5f, -0.5f,  0.5f,     1.0f,  0.0f,  0.0f,  1.0f, 0.0f, 0.0f,   0.0f, 0.0f,
-          0.5f, -0.5f, -0.5f,     1.0f,  0.0f, 0.0f,  0.0f, 1.0f, 0.0f,   1.0f, 0.0f,
-          0.5f,  0.5f, -0.5f,     1.0f, 0.0f, 0.0f,  0.0f, 0.0f, 1.0f,   1.0f, 1.0f,
-          0.5f,  0.5f,  0.5f,     1.0f, 0.0f, 0.0f,  1.0f, 1.0f, 0.0f,   0.0f, 1.0f,
-
-          // Top
-          -0.5f,  0.5f,  0.5f,     0.0f,  1.0f,  0.0f,  1.0f, 0.0f, 0.0f,   0.0f, 0.0f,
-           0.5f,  0.5f,  0.5f,     0.0f,  1.0f, 0.0f,  0.0f, 1.0f, 0.0f,   1.0f, 0.0f,
-           0.5f,  0.5f, -0.5f,     0.0f,  1.0f, 0.0f,  0.0f, 0.0f, 1.0f,   1.0f, 1.0f,
-          -0.5f,  0.5f, -0.5f,     0.0f,  1.0f, 0.0f,  1.0f, 1.0f, 0.0f,   0.0f, 1.0f,
-
-          // Bottom
-          -0.5f, -0.5f, -0.5f,     0.0f, -1.0f,  0.0f,  1.0f, 0.0f, 0.0f,   0.0f, 0.0f,
-           0.5f, -0.5f, -0.5f,     0.0f, -1.0f,  0.0f,  0.0f, 1.0f, 0.0f,   1.0f, 0.0f,
-           0.5f, -0.5f,  0.5f,     0.0f, -1.0f,  0.0f,  0.0f, 0.0f, 1.0f,   1.0f, 1.0f,
-          -0.5f, -0.5f,  0.5f,     0.0f, -1.0f,  0.0f,  1.0f, 1.0f, 0.0f,   0.0f, 1.0f
-    };
-    unsigned int indices[] = {
-         0,  1,  2,   2,  3,  0, // Front
-         4,  5,  6,   6,  7,  4, // Back
-         8,  9, 10,  10, 11,  8, // Left
-        12, 13, 14,  14, 15, 12, // Right
-        16, 17, 18,  18, 19, 16, // Top
-        20, 21, 22,  22, 23, 20  // Bottom
-    };
-
     try
     {
         // WINDOW
@@ -119,30 +68,14 @@ int main()
             1.0f
         );
 
-        // SHADERS
-        FuxEngine::Shader shader(
-            "assets/shaders/basic.vert.glsl",
-            "assets/shaders/basic.frag.glsl"
-        );
-
+        FuxEngine::ShaderManager shaderManager;
+        FuxEngine::TextureManager textureManager;
+        FuxEngine::MaterialManager materialManager(shaderManager, textureManager);
+        FuxEngine::Material& material = materialManager.Load("basic");
         FuxEngine::Renderer::SetAmbientStrength(0.1f);
 
-		// TEXTURE
-        FuxEngine::Texture texture("assets/textures/test.jpg");
-
-		// MATERIAL
-        FuxEngine::Material material(
-            shader,
-            texture
-        );
-
-        // VAO VBO EBO in mesh
-        FuxEngine::Mesh mesh(
-            vertices,
-            sizeof(vertices),
-            indices,
-            36
-        );
+        std::unique_ptr<FuxEngine::Mesh> mesh = FuxEngine::ObjLoader::Load("cube.obj");
+        std::unique_ptr<FuxEngine::Mesh> body = FuxEngine::ObjLoader::Load("FinalBaseMesh.obj");
 
 		// PROJECTION MATRIX
         glm::mat4 projection = glm::perspective(
@@ -164,10 +97,13 @@ int main()
 
 		// SCENE + ENTITIES
         FuxEngine::Scene scene;
-        FuxEngine::Entity& cube = scene.CreateEntity(mesh, material);
-        FuxEngine::Entity& cube2 = scene.CreateEntity(mesh, material);
+        FuxEngine::Entity& cube = scene.CreateEntity(*mesh, material, "CubeLeft");
+        FuxEngine::Entity& cube2 = scene.CreateEntity(*mesh, material, "CubeRight");
+        FuxEngine::Entity& bodyEntity = scene.CreateEntity(*body, material, "Body");
         cube.GetTransform().SetPosition(glm::vec3(-1.5f, 0.0f, 0.0f));
         cube2.GetTransform().SetPosition(glm::vec3(1.5f, 0.0f, 0.0f));
+        bodyEntity.GetTransform().SetPosition(glm::vec3(0.0f, -1.0f, 0.0f));
+        bodyEntity.GetTransform().SetScale(glm::vec3(0.1f));
         scene.CreateLight<FuxEngine::PointLight>(
             glm::vec3(2.0f, 2.0f, 2.0f),
             glm::vec3(1.0f),

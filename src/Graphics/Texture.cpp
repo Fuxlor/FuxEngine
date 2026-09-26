@@ -2,7 +2,7 @@
 
 #include <glad/glad.h>
 #include <stb_image.h>
-#include <iostream>
+#include <stdexcept>
 
 namespace FuxEngine
 {
@@ -29,8 +29,11 @@ namespace FuxEngine
 
         if (!data)
         {
-            std::cerr << "Texture: echec du chargement de " << path << std::endl;
-            return;
+            const char* reason = stbi_failure_reason();
+            throw std::runtime_error(
+                "Impossible de charger la texture : " + path + " (" +
+                (reason ? reason : "cause inconnue") + ")"
+            );
         }
 
         GLenum format = GL_RGB;
@@ -41,6 +44,11 @@ namespace FuxEngine
             format = GL_RGB;
         else if (m_Channels == 4)
             format = GL_RGBA;
+        else
+        {
+            stbi_image_free(data);
+            throw std::runtime_error("Format de texture non pris en charge : " + path);
+        }
 
         glGenTextures(1, &m_RendererID);
         glBindTexture(GL_TEXTURE_2D, m_RendererID);
