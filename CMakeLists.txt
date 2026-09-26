@@ -41,6 +41,9 @@ add_executable(FuxEngine
     src/Lighting/PointLight.cpp
     src/Lighting/DirectionalLight.cpp
     src/Lighting/SpotLight.cpp
+    src/Physics/RigidBody.cpp
+    src/Physics/PhysicsWorld.cpp
+    src/Physics/PhysicsDebugRenderer.cpp
     src/Resources/ShaderManager.cpp
     src/Resources/TextureManager.cpp
     src/Resources/MaterialManager.cpp
